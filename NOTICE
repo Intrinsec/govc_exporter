@@ -1,0 +1,3 @@
+govc Prometheus exporter metrics created from Prometheus node_exporter
+Copyright 2013-2020 The Prometheus Authors
+Copyright 2018-2020 Stany MARCEL
