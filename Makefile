@@ -15,7 +15,7 @@
 all::
 
 # Needs to be defined before including Makefile.common to auto-generate targets
-DOCKER_ARCHS ?= amd64 armv7 arm64 ppc64le s390x
+DOCKER_ARCHS ?= amd64 armv7 arm64 ppc64le
 
 include Makefile.common
 
@@ -23,7 +23,7 @@ PROMTOOL_VERSION ?= 2.5.0
 PROMTOOL_URL     ?= https://github.com/prometheus/prometheus/releases/download/v$(PROMTOOL_VERSION)/prometheus-$(PROMTOOL_VERSION).$(GO_BUILD_PLATFORM).tar.gz
 PROMTOOL         ?= $(FIRST_GOPATH)/bin/promtool
 
-DOCKER_IMAGE_NAME       ?= node-exporter
+DOCKER_IMAGE_NAME       ?= govc-exporter
 MACH                    ?= $(shell uname -m)
 
 STATICCHECK_IGNORE =
