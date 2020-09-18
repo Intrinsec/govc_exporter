@@ -16,19 +16,15 @@
 package collector
 
 import (
-	"context"
-	"net/url"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
-	"github.com/vmware/govmomi/vim25/soap"
 )
 
 type resourcePoolCollector struct {
+	vcCollector
 	overallCPUUsage              typedDesc
 	overallCPUDemand             typedDesc
 	guestMemoryUsage             typedDesc
@@ -43,9 +39,6 @@ type resourcePoolCollector struct {
 	overheadMemory               typedDesc
 	consumedOverheadMemory       typedDesc
 	compressedMemory             typedDesc
-	logger                       log.Logger
-	ctx                          context.Context
-	client                       *govmomi.Client
 }
 
 const (
@@ -60,7 +53,7 @@ func init() {
 func NewResourcePoolCollector(logger log.Logger) (Collector, error) {
 	labels := []string{"vc", "dc", "name"}
 
-	return &resourcePoolCollector{
+	res := resourcePoolCollector{
 		overallCPUUsage: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "used_cpu_mhz"),
 			"datastore overall CPU usage MHz", labels, nil), prometheus.GaugeValue},
@@ -103,8 +96,9 @@ func NewResourcePoolCollector(logger log.Logger) (Collector, error) {
 		compressedMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "compressed_mem_bytes"),
 			"datastore compressed memory in bytes", labels, nil), prometheus.GaugeValue},
-		logger: logger,
-	}, nil
+	}
+	res.logger = logger
+	return &res, nil
 }
 
 func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) {
@@ -153,35 +147,6 @@ func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) 
 		ch <- c.compressedMemory.mustNewConstMetric(float64(summary.QuickStats.CompressedMemory*mb), labels...)
 	}
 	return nil
-}
-
-func (c *resourcePoolCollector) apiConnect() error {
-	esxURL := *vcURL
-	level.Debug(c.logger).Log("msg", "connecting to esx", "url", esxURL)
-	u, err := soap.ParseURL(esxURL)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to parse url", "url", esxURL, "err", err)
-		return err
-	}
-	u.User = url.UserPassword(*vcUsername, *vcPassword)
-	c.ctx = context.Background()
-	c.client, err = govmomi.NewClient(c.ctx, u, true)
-	return err
-}
-
-func (c *resourcePoolCollector) apiDisconnect() {
-	err := c.client.Logout(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
-	c.ctx.Done()
-}
-
-func (c *resourcePoolCollector) destroyView(v *view.ContainerView) {
-	err := v.Destroy(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
 }
 
 func (c *resourcePoolCollector) apiRetrieve() ([]mo.ResourcePool, error) {

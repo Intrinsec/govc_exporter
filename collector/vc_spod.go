@@ -16,24 +16,17 @@
 package collector
 
 import (
-	"context"
-	"net/url"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
-	"github.com/vmware/govmomi/vim25/soap"
 )
 
 type storagePodCollector struct {
+	vcCollector
 	capacity  typedDesc
 	freeSpace typedDesc
-	logger    log.Logger
-	ctx       context.Context
-	client    *govmomi.Client
 }
 
 const (
@@ -48,16 +41,16 @@ func init() {
 func NewStoragePodCollector(logger log.Logger) (Collector, error) {
 	labels := []string{"vc", "dc", "name"}
 
-	return &storagePodCollector{
+	res := storagePodCollector{
 		capacity: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, storagePodCollectorSubsystem, "capacity_bytes"),
 			"storagePod capacity in bytes", labels, nil), prometheus.GaugeValue},
 		freeSpace: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, storagePodCollectorSubsystem, "free_space_bytes"),
 			"storagePod freespace in bytes", labels, nil), prometheus.GaugeValue},
-
-		logger: logger,
-	}, nil
+	}
+	res.logger = logger
+	return &res, nil
 }
 
 func (c *storagePodCollector) Update(ch chan<- prometheus.Metric) (err error) {
@@ -91,35 +84,6 @@ func (c *storagePodCollector) Update(ch chan<- prometheus.Metric) (err error) {
 
 	}
 	return nil
-}
-
-func (c *storagePodCollector) apiConnect() error {
-	esxURL := *vcURL
-	level.Debug(c.logger).Log("msg", "connecting to esx", "url", esxURL)
-	u, err := soap.ParseURL(esxURL)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to parse url", "url", esxURL, "err", err)
-		return err
-	}
-	u.User = url.UserPassword(*vcUsername, *vcPassword)
-	c.ctx = context.Background()
-	c.client, err = govmomi.NewClient(c.ctx, u, true)
-	return err
-}
-
-func (c *storagePodCollector) apiDisconnect() {
-	err := c.client.Logout(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
-	c.ctx.Done()
-}
-
-func (c *storagePodCollector) destroyView(v *view.ContainerView) {
-	err := v.Destroy(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
 }
 
 func (c *storagePodCollector) apiRetrieve() ([]mo.StoragePod, error) {

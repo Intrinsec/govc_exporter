@@ -16,23 +16,20 @@
 package collector
 
 import (
-	"context"
 	"encoding/json"
-	"net/url"
 	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
-	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
 type virtualMachineCollector struct {
+	vcCollector
 	numCPU                       typedDesc
 	numCoresPerSocket            typedDesc
 	memoryBytes                  typedDesc
@@ -58,9 +55,6 @@ type virtualMachineCollector struct {
 	diskCapacityBytes            typedDesc
 	networkConnected             typedDesc
 	ethernetDriverConnected      typedDesc
-	logger                       log.Logger
-	ctx                          context.Context
-	client                       *govmomi.Client
 }
 
 const (
@@ -95,7 +89,7 @@ func NewVirtualMachineCollector(logger log.Logger) (Collector, error) {
 	ethernetDevLabels = append(ethernetDevLabels, "driver_model", "driver_mac", "driver_status")
 	diskLabels = append(diskLabels, "vmdk")
 
-	return &virtualMachineCollector{
+	res := virtualMachineCollector{
 
 		numCPU: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, virtualMachineCollectorSubsystem, "cpu_number_total"),
@@ -196,9 +190,9 @@ func NewVirtualMachineCollector(logger log.Logger) (Collector, error) {
 		ethernetDriverConnected: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, virtualMachineCollectorSubsystem, "ethernet_driver_connected"),
 			"vm ethernet driver connected", ethernetDevLabels, nil), prometheus.GaugeValue},
-
-		logger: logger,
-	}, nil
+	}
+	res.logger = logger
+	return &res, nil
 }
 
 func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric) (err error) {
@@ -409,35 +403,6 @@ func GetDisks(vm mo.VirtualMachine) []Disk {
 		})
 	}
 	return res
-}
-
-func (c *virtualMachineCollector) apiConnect() error {
-	esxURL := *vcURL
-	level.Debug(c.logger).Log("msg", "connecting to esx", "url", esxURL)
-	u, err := soap.ParseURL(esxURL)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to parse url", "url", esxURL, "err", err)
-		return err
-	}
-	u.User = url.UserPassword(*vcUsername, *vcPassword)
-	c.ctx = context.Background()
-	c.client, err = govmomi.NewClient(c.ctx, u, true)
-	return err
-}
-
-func (c *virtualMachineCollector) apiDisconnect() {
-	err := c.client.Logout(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
-	c.ctx.Done()
-}
-
-func (c *virtualMachineCollector) destroyView(v *view.ContainerView) {
-	err := v.Destroy(c.ctx)
-	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
-	}
 }
 
 func (c *virtualMachineCollector) apiRetrieve() ([]mo.VirtualMachine, error) {
