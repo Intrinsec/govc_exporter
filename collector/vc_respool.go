@@ -39,6 +39,7 @@ type resourcePoolCollector struct {
 	overheadMemory               typedDesc
 	consumedOverheadMemory       typedDesc
 	compressedMemory             typedDesc
+	memoryLimit                  typedDesc
 }
 
 const (
@@ -56,46 +57,49 @@ func NewResourcePoolCollector(logger log.Logger) (Collector, error) {
 	res := resourcePoolCollector{
 		overallCPUUsage: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "used_cpu_mhz"),
-			"datastore overall CPU usage MHz", labels, nil), prometheus.GaugeValue},
+			"ressource pool overall CPU usage MHz", labels, nil), prometheus.GaugeValue},
 		overallCPUDemand: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "demanded_cpu_mhz"),
-			"datastore overall CPU demand MHz", labels, nil), prometheus.GaugeValue},
+			"ressource pool overall CPU demand MHz", labels, nil), prometheus.GaugeValue},
 		guestMemoryUsage: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "guest_used_mem_bytes"),
-			"datastore guest memory usage in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool guest memory usage in bytes", labels, nil), prometheus.GaugeValue},
 		hostMemoryUsage: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "host_used_mem_bytes"),
-			"datastore host memory usage in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool host memory usage in bytes", labels, nil), prometheus.GaugeValue},
 		distributedCPUEntitlement: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "distributed_cpu_entitlement_mhz"),
-			"datastore distributed CPU entitlement", labels, nil), prometheus.GaugeValue},
+			"ressource pool distributed CPU entitlement", labels, nil), prometheus.GaugeValue},
 		distributedMemoryEntitlement: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "distributed_mem_entitlement_bytes"),
-			"datastore distributed memory entitlement", labels, nil), prometheus.GaugeValue},
+			"ressource pool distributed memory entitlement", labels, nil), prometheus.GaugeValue},
 		staticCPUEntitlement: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "static_cpu_entitlement_mhz"),
-			"datastore static cpu entitlement", labels, nil), prometheus.GaugeValue},
+			"ressource pool static cpu entitlement", labels, nil), prometheus.GaugeValue},
 		privateMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "private_mem_bytes"),
-			"datastore private memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool private memory in bytes", labels, nil), prometheus.GaugeValue},
 		sharedMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "shared_mem_bytes"),
-			"datastore shared memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool shared memory in bytes", labels, nil), prometheus.GaugeValue},
 		swappedMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "swapped_mem_bytes"),
-			"datastore swapped memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool swapped memory in bytes", labels, nil), prometheus.GaugeValue},
 		balloonedMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "ballooned_mem_bytes"),
-			"datastore ballooned memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool ballooned memory in bytes", labels, nil), prometheus.GaugeValue},
 		overheadMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "overhead_mem_bytes"),
-			"datastore overhead memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool overhead memory in bytes", labels, nil), prometheus.GaugeValue},
 		consumedOverheadMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "consumed_overhead_mem_bytes"),
-			"datastore consumed overhead memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool consumed overhead memory in bytes", labels, nil), prometheus.GaugeValue},
 		compressedMemory: typedDesc{prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "compressed_mem_bytes"),
-			"datastore compressed memory in bytes", labels, nil), prometheus.GaugeValue},
+			"ressource pool compressed memory in bytes", labels, nil), prometheus.GaugeValue},
+		memoryLimit: typedDesc{prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resourcePoolCollectorSubsystem, "mem_limit_bytes"),
+			"ressource pool memory limit in bytes", labels, nil), prometheus.GaugeValue},
 	}
 	res.logger = logger
 	return &res, nil
@@ -119,7 +123,7 @@ func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) 
 
 	vc := *vcURL
 
-	level.Debug(c.logger).Log("msg", "datastore retrieved", "num", len(items))
+	level.Debug(c.logger).Log("msg", "ressource pool retrieved", "num", len(items))
 
 	for _, item := range items {
 		summary := item.Summary.GetResourcePoolSummary()
@@ -145,6 +149,11 @@ func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) 
 		ch <- c.overheadMemory.mustNewConstMetric(float64(summary.QuickStats.OverheadMemory*mb), labels...)
 		ch <- c.consumedOverheadMemory.mustNewConstMetric(float64(summary.QuickStats.ConsumedOverheadMemory*mb), labels...)
 		ch <- c.compressedMemory.mustNewConstMetric(float64(summary.QuickStats.CompressedMemory*mb), labels...)
+		if summary.Config.MemoryAllocation.Limit != nil {
+			ch <- c.memoryLimit.mustNewConstMetric(float64(*summary.Config.MemoryAllocation.Limit*mb), labels...)
+		} else {
+			ch <- c.memoryLimit.mustNewConstMetric(float64(0.0), labels...)
+		}
 	}
 	return nil
 }
