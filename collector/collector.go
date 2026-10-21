@@ -15,6 +15,7 @@
 package collector
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -137,20 +138,30 @@ func (n MainCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (n MainCollector) Collect(ch chan<- prometheus.Metric) {
+	ctx := context.Background()
+	client, err := sessions.get(ctx, n.logger)
+	if err != nil {
+		n.logger.Error("unable to connect", "err", err)
+		for name := range n.Collectors {
+			ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, 0, name)
+			ch <- prometheus.MustNewConstMetric(scrapeSuccessDesc, prometheus.GaugeValue, 0, name)
+		}
+		return
+	}
+	s := newScrape(ctx, client)
+
 	wg := sync.WaitGroup{}
-	wg.Add(len(n.Collectors))
 	for name, c := range n.Collectors {
-		go func(name string, c Collector) {
-			execute(name, c, ch, n.logger)
-			wg.Done()
-		}(name, c)
+		wg.Go(func() {
+			execute(name, c, s, ch, n.logger)
+		})
 	}
 	wg.Wait()
 }
 
-func execute(name string, c Collector, ch chan<- prometheus.Metric, logger *slog.Logger) {
+func execute(name string, c Collector, s *scrape, ch chan<- prometheus.Metric, logger *slog.Logger) {
 	begin := time.Now()
-	err := c.Update(ch)
+	err := c.Update(ch, s)
 	duration := time.Since(begin)
 	var success float64
 
@@ -172,7 +183,7 @@ func execute(name string, c Collector, ch chan<- prometheus.Metric, logger *slog
 // Collector is the interface a collector has to implement.
 type Collector interface {
 	// Get new metrics and expose them via prometheus registry.
-	Update(ch chan<- prometheus.Metric) error
+	Update(ch chan<- prometheus.Metric, s *scrape) error
 }
 
 type typedDesc struct {

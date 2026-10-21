@@ -15,135 +15,43 @@ package collector
 
 import (
 	"context"
-	"net/url"
 	"sync"
-
-	"log/slog"
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/vmware/govmomi"
-	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/view"
-	"github.com/vmware/govmomi/vim25"
-	"github.com/vmware/govmomi/vim25/mo"
-	"github.com/vmware/govmomi/vim25/soap"
-	"github.com/vmware/govmomi/vim25/types"
 )
 
-var (
-	vcPassword       = kingpin.Flag("collector.vc.password", "vc api password").Envar("VC_PASSWORD").Required().String()
-	vcUsername       = kingpin.Flag("collector.vc.username", "vc api username").Envar("VC_USERNAME").Required().String()
-	vcURL            = kingpin.Flag("collector.vc.url", "vc api username").Envar("VC_URL").Required().String()
-	useIsecSpecifics = kingpin.Flag("collector.intrinsec", "Enable intrinsec specific features").Default("false").Bool()
-	cache            = NewParentsCache()
-)
+var useIsecSpecifics = kingpin.Flag("collector.intrinsec", "Enable intrinsec specific features").Default("false").Bool()
 
-type Parents struct {
-	dc      string
-	cluster string
-	spod    string
+// scrape holds what the collectors share during one scrape: the vCenter
+// session and the inventory used to resolve parents, loaded once on demand.
+type scrape struct {
+	ctx    context.Context
+	client *govmomi.Client
+	// inventory returns the inventory, loading it on first call.
+	inventory func() (inventory, error)
 }
 
-type ParentsCache struct {
-	cache map[types.ManagedObjectReference]Parents
-	mux   sync.Mutex
+func newScrape(ctx context.Context, client *govmomi.Client) *scrape {
+	s := &scrape{ctx: ctx, client: client}
+	s.inventory = sync.OnceValues(func() (inventory, error) {
+		return loadInventory(ctx, client.Client)
+	})
+	return s
 }
 
-func NewParentsCache() *ParentsCache {
-	return &ParentsCache{
-		cache: make(map[types.ManagedObjectReference]Parents),
-	}
-}
-
-func (c *ParentsCache) Add(mor types.ManagedObjectReference, val Parents) {
-	c.mux.Lock()
-	c.cache[mor] = val
-	c.mux.Unlock()
-}
-
-func (c *ParentsCache) Get(mor types.ManagedObjectReference) (Parents, bool) {
-	c.mux.Lock()
-	val, ok := c.cache[mor]
-	c.mux.Unlock()
-	return val, ok
-}
-
-func (c *ParentsCache) Flush() {
-	c.mux.Lock()
-	c.cache = make(map[types.ManagedObjectReference]Parents)
-	c.mux.Unlock()
-}
-
-func getParents(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.ManagedEntity) Parents {
-	var entity mo.ManagedEntity
-	var cur *types.ManagedObjectReference
-	res := Parents{
-		dc:      "NONE",
-		cluster: "NONE",
-		spod:    "NONE",
-	}
-
-	if me.Parent == nil {
-		return res
-	}
-	cached, ok := cache.Get(*me.Parent)
-	if ok {
-		return cached
-	}
-
-	pc := property.DefaultCollector(client)
-
-	cur = me.Parent
-	for {
-		err := pc.RetrieveOne(ctx, *cur, []string{"name", "parent"}, &entity)
-		if err != nil {
-			return Parents{"ERROR", "ERROR", "ERROR"}
-		}
-		if cur.Type == "StoragePod" {
-			res.spod = entity.Name
-		}
-		if cur.Type == "ClusterComputeResource" {
-			res.cluster = entity.Name
-		}
-		if cur.Type == "Datacenter" {
-			res.dc = entity.Name
-			break
-		}
-		if entity.Parent == nil {
-			break
-		}
-		cur = entity.Parent
-	}
-	cache.Add(*me.Parent, res)
-	return res
-}
-
-func getVMPool(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
-	if me.ResourcePool == nil {
-		return nil
-	}
-
-	var entity mo.ManagedEntity
-	pc := property.DefaultCollector(client)
-	err := pc.RetrieveOne(ctx, *me.ResourcePool, []string{"name", "parent"}, &entity)
+// retrieveAll fetches props of every managed object of the given kind.
+func (s *scrape) retrieveAll(kind string, props []string, dst any) error {
+	m := view.NewManager(s.client.Client)
+	v, err := m.CreateContainerView(s.ctx, s.client.ServiceContent.RootFolder, []string{kind}, true)
 	if err != nil {
-		return nil
+		return err
 	}
-	return &entity
-}
+	// A view that fails to be destroyed only lives until the session ends.
+	defer func() { _ = v.Destroy(s.ctx) }()
 
-func getVMHostSystem(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
-	if me.Summary.Runtime.Host == nil {
-		return nil
-	}
-
-	var entity mo.ManagedEntity
-	pc := property.DefaultCollector(client)
-	err := pc.RetrieveOne(ctx, *me.Summary.Runtime.Host, []string{"name", "parent"}, &entity)
-	if err != nil {
-		return nil
-	}
-	return &entity
+	return v.Retrieve(s.ctx, []string{kind}, props, dst)
 }
 
 func b2f(val bool) float64 {
@@ -151,39 +59,4 @@ func b2f(val bool) float64 {
 		return 1.0
 	}
 	return 0.0
-}
-
-type vcCollector struct {
-	logger *slog.Logger
-	ctx    context.Context
-	client *govmomi.Client
-}
-
-func (c *vcCollector) apiConnect() error {
-	esxURL := *vcURL
-	c.logger.Debug("connecting to", "url", esxURL)
-	u, err := soap.ParseURL(esxURL)
-	if err != nil {
-		c.logger.Error("unable to parse url", "url", esxURL, "err", err)
-		return err
-	}
-	u.User = url.UserPassword(*vcUsername, *vcPassword)
-	c.ctx = context.Background()
-	c.client, err = govmomi.NewClient(c.ctx, u, true)
-	return err
-}
-
-func (c *vcCollector) apiDisconnect() {
-	err := c.client.Logout(c.ctx)
-	if err != nil {
-		c.logger.Error("logout error", "err", err)
-	}
-	c.ctx.Done()
-}
-
-func (c *vcCollector) destroyView(v *view.ContainerView) {
-	err := v.Destroy(c.ctx)
-	if err != nil {
-		c.logger.Error("logout error", "err", err)
-	}
 }

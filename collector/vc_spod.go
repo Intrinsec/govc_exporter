@@ -19,12 +19,11 @@ import (
 	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
 type storagePodCollector struct {
-	vcCollector
+	logger    *slog.Logger
 	capacity  typedDesc
 	freeSpace typedDesc
 }
@@ -53,19 +52,16 @@ func NewStoragePodCollector(logger *slog.Logger) (Collector, error) {
 	return &res, nil
 }
 
-func (c *storagePodCollector) Update(ch chan<- prometheus.Metric) (err error) {
-
-	cache.Flush()
-
-	err = c.apiConnect()
-	if err != nil {
-		c.logger.Error("unable to connect", "err", err)
-		return err
-	}
-	defer c.apiDisconnect()
-	items, err := c.apiRetrieve()
+func (c *storagePodCollector) Update(ch chan<- prometheus.Metric, s *scrape) error {
+	items, err := c.apiRetrieve(s)
 	if err != nil {
 		c.logger.Error("unable retrieve esx", "err", err)
+		return err
+	}
+
+	inv, err := s.inventory()
+	if err != nil {
+		c.logger.Error("unable to retrieve inventory", "err", err)
 		return err
 	}
 
@@ -76,7 +72,7 @@ func (c *storagePodCollector) Update(ch chan<- prometheus.Metric) (err error) {
 	for _, item := range items {
 		summary := item.Summary
 		name := summary.Name
-		tmp := getParents(c.ctx, c.logger, c.client.Client, item.ManagedEntity)
+		tmp := inv.parents(item.Parent)
 
 		labels := []string{vc, tmp.dc, name}
 		ch <- c.capacity.mustNewConstMetric(float64(summary.Capacity), labels...)
@@ -86,29 +82,11 @@ func (c *storagePodCollector) Update(ch chan<- prometheus.Metric) (err error) {
 	return nil
 }
 
-func (c *storagePodCollector) apiRetrieve() ([]mo.StoragePod, error) {
+func (c *storagePodCollector) apiRetrieve(s *scrape) ([]mo.StoragePod, error) {
 	var items []mo.StoragePod
-
-	m := view.NewManager(c.client.Client)
-	v, err := m.CreateContainerView(
-		c.ctx,
-		c.client.ServiceContent.RootFolder,
-		[]string{"StoragePod"},
-		true,
-	)
-	if err != nil {
-		return items, err
-	}
-	defer c.destroyView(v)
-
-	err = v.Retrieve(
-		c.ctx,
-		[]string{"StoragePod"},
-		[]string{
-			"parent",
-			"summary",
-		},
-		&items,
-	)
+	err := s.retrieveAll("StoragePod", []string{
+		"parent",
+		"summary",
+	}, &items)
 	return items, err
 }
