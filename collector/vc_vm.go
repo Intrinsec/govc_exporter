@@ -24,13 +24,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
 type virtualMachineCollector struct {
-	vcCollector
+	logger                       *slog.Logger
 	numCPU                       typedDesc
 	numCoresPerSocket            typedDesc
 	memoryBytes                  typedDesc
@@ -196,19 +195,16 @@ func NewVirtualMachineCollector(logger *slog.Logger) (Collector, error) {
 	return &res, nil
 }
 
-func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric) (err error) {
-
-	cache.Flush()
-
-	err = c.apiConnect()
-	if err != nil {
-		c.logger.Error("unable to connect", "err", err)
-		return err
-	}
-	defer c.apiDisconnect()
-	items, err := c.apiRetrieve()
+func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric, s *scrape) error {
+	items, err := c.apiRetrieve(s)
 	if err != nil {
 		c.logger.Error("unable retrieve vm", "err", err)
+		return err
+	}
+
+	inv, err := s.inventory()
+	if err != nil {
+		c.logger.Error("unable to retrieve inventory", "err", err)
 		return err
 	}
 
@@ -218,23 +214,17 @@ func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric) (err error
 
 	for _, item := range items {
 
-		var esxName string
-		var poolName string
 		var parents Parents
-
-		pool := getVMPool(c.ctx, c.logger, c.client.Client, item)
-		if pool == nil {
-			parents = getParents(c.ctx, c.logger, c.client.Client, item.ManagedEntity)
-			poolName = "NONE"
+		poolName := "NONE"
+		if pool, ok := inv.entry(item.ResourcePool); ok {
+			parents = inv.parents(pool.parent)
+			poolName = pool.name
 		} else {
-			parents = getParents(c.ctx, c.logger, c.client.Client, *pool)
-			poolName = pool.Name
+			parents = inv.parents(item.Parent)
 		}
-		host := getVMHostSystem(c.ctx, c.logger, c.client.Client, item)
-		if host == nil {
-			esxName = "NONE"
-		} else {
-			esxName = host.Name
+		esxName := "NONE"
+		if host, ok := inv.entry(item.Summary.Runtime.Host); ok {
+			esxName = host.name
 		}
 
 		labelsValues := []string{
@@ -412,38 +402,20 @@ func GetDisks(vm mo.VirtualMachine) []Disk {
 	return res
 }
 
-func (c *virtualMachineCollector) apiRetrieve() ([]mo.VirtualMachine, error) {
+func (c *virtualMachineCollector) apiRetrieve(s *scrape) ([]mo.VirtualMachine, error) {
 	var items []mo.VirtualMachine
-
-	m := view.NewManager(c.client.Client)
-	v, err := m.CreateContainerView(
-		c.ctx,
-		c.client.ServiceContent.RootFolder,
-		[]string{"VirtualMachine"},
-		true,
-	)
-	if err != nil {
-		return items, err
-	}
-	defer c.destroyView(v)
-
-	err = v.Retrieve(
-		c.ctx,
-		[]string{"VirtualMachine"},
-		[]string{
-			"config",
-			//"datatore",
-			"guest",
-			"guestHeartbeatStatus",
-			"network",
-			"parent",
-			"resourceConfig",
-			"resourcePool",
-			"runtime",
-			"snapshot",
-			"summary",
-		},
-		&items,
-	)
+	err := s.retrieveAll("VirtualMachine", []string{
+		"config",
+		//"datatore",
+		"guest",
+		"guestHeartbeatStatus",
+		"network",
+		"parent",
+		"resourceConfig",
+		"resourcePool",
+		"runtime",
+		"snapshot",
+		"summary",
+	}, &items)
 	return items, err
 }

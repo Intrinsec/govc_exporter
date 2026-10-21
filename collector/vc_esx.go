@@ -21,12 +21,11 @@ import (
 	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
 type esxCollector struct {
-	vcCollector
+	logger         *slog.Logger
 	uptimeSeconds  typedDesc
 	rebootRequired typedDesc
 	cpuCoresTotal  typedDesc
@@ -77,19 +76,16 @@ func NewEsxCollector(logger *slog.Logger) (Collector, error) {
 	return &res, nil
 }
 
-func (c *esxCollector) Update(ch chan<- prometheus.Metric) (err error) {
-
-	cache.Flush()
-
-	err = c.apiConnect()
-	if err != nil {
-		c.logger.Error("unable to connect", "err", err)
-		return err
-	}
-	defer c.apiDisconnect()
-	hss, err := c.apiRetrieve()
+func (c *esxCollector) Update(ch chan<- prometheus.Metric, s *scrape) error {
+	hss, err := c.apiRetrieve(s)
 	if err != nil {
 		c.logger.Error("unable retrieve esx", "err", err)
+		return err
+	}
+
+	inv, err := s.inventory()
+	if err != nil {
+		c.logger.Error("unable to retrieve inventory", "err", err)
 		return err
 	}
 
@@ -102,7 +98,7 @@ func (c *esxCollector) Update(ch chan<- prometheus.Metric) (err error) {
 		summ := hs.Summary
 		name := summ.Config.Name
 
-		tmp := getParents(c.ctx, c.logger, c.client.Client, hs.ManagedEntity)
+		tmp := inv.parents(hs.Parent)
 		version := summ.Config.Product.Version
 		status := string(summ.OverallStatus)
 		powerstate := string(summ.Runtime.PowerState)
@@ -132,29 +128,11 @@ func (c *esxCollector) Update(ch chan<- prometheus.Metric) (err error) {
 	return nil
 }
 
-func (c *esxCollector) apiRetrieve() ([]mo.HostSystem, error) {
+func (c *esxCollector) apiRetrieve(s *scrape) ([]mo.HostSystem, error) {
 	var hss []mo.HostSystem
-
-	m := view.NewManager(c.client.Client)
-	v, err := m.CreateContainerView(
-		c.ctx,
-		c.client.ServiceContent.RootFolder,
-		[]string{"HostSystem"},
-		true,
-	)
-	if err != nil {
-		return hss, err
-	}
-	defer c.destroyView(v)
-
-	err = v.Retrieve(
-		c.ctx,
-		[]string{"HostSystem"},
-		[]string{
-			"parent",
-			"summary",
-		},
-		&hss,
-	)
+	err := s.retrieveAll("HostSystem", []string{
+		"parent",
+		"summary",
+	}, &hss)
 	return hss, err
 }

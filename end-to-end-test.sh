@@ -127,11 +127,13 @@ get() {
 
 sleep 1
 
+# vcsim places VMs on random hosts, so the VM esx label is normalized.
 get "127.0.0.1:${port}/metrics" | sed \
   -e 's/ [0-9.e+-]\+$/ 0/' \
   -e "s/:${simport}/:SIMPORT/g" \
   -e 's/^node_exporter_build_info.*/govc_exporter_build_info 0/' \
-  -e 's/^go_info.*/go_info 0/' > "${tmpdir}/e2e-output.txt"
+  -e 's/^go_info.*/go_info 0/' \
+  -e '/^govc_vm_/s/esx="[^"]*"/esx="ESX"/' | LC_ALL=C sort > "${tmpdir}/e2e-output.txt"
 
 diff -u \
   "${fixture}" \
