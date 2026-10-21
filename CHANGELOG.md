@@ -1,4 +1,4 @@
-## Unreleased
+## 1.2.0 / 2026-10-21
 * [CHANGE] Go 1.27.3 pinned in `go.mod`, `Dockerfile` and CI; all dependencies updated (govmomi v0.56.0, client_golang v1.25.0, common v0.72.1).
 * [CHANGE] `--web.config` is now handled by [exporter-toolkit](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md): the `tls_config` key is renamed `tls_server_config`. An old file makes the exporter fail at startup.
 * [CHANGE] Logging uses `log/slog` (`--log.level`/`--log.format` unchanged, output now includes `source=`).
