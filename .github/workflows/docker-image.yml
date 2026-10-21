@@ -3,12 +3,24 @@ name: docker ci
 on:
   push:
     branches: master
+    tags: ["v*"]
 
 jobs:
   main:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      -
+        name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: intrinsec/govc-exporter
+          # latest follows master, a v1.2.3 tag publishes 1.2.3 and 1.2.
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -33,9 +45,8 @@ jobs:
             REVISION=${{ github.sha }}
             BRANCH=${{ github.ref_name }}
           push: true
-          tags: |
-            intrinsec/govc-exporter:latest
-            intrinsec/govc-exporter:1.1.1
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
