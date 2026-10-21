@@ -16,11 +16,16 @@ port="$((10000 + (RANDOM % 10000)))"
 simport=$((port + 1))
 tmpdir=$(mktemp -d /tmp/govc_exporter_e2e_test.XXXXXX)
 
-export GOPATH=/${tmpdir}/go
-mkdir -p "${GOPATH}"
-go get -u github.com/vmware/govmomi/vcsim
-vcsim=${GOPATH}/bin/vcsim
-unset GOPATH
+# vcsim is no longer shipped in the govmomi Go module: use $VCSIM if set,
+# otherwise extract it from the image matching the govmomi version in go.mod.
+vcsim=${VCSIM:-}
+if [ -z "${vcsim}" ]; then
+  govmomi_version=$(go list -m -f '{{.Version}}' github.com/vmware/govmomi)
+  vcsim_container=$(docker create "vmware/vcsim:${govmomi_version}")
+  docker cp "${vcsim_container}:/vcsim" "${tmpdir}/vcsim" >/dev/null
+  docker rm "${vcsim_container}" >/dev/null
+  vcsim=${tmpdir}/vcsim
+fi
 
 arch="$(uname -m)"
 

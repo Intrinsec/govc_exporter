@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Check go.mod and vendor are tidy
+        run: |
+          go mod tidy
+          go mod vendor
+          git diff --exit-code -- go.mod go.sum vendor/
+      - run: go vet ./...
+      - run: go test -race ./...
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0

@@ -1,7 +1,7 @@
 go:
-    # Whenever the Go version is updated here, .travis.yml and
-    # .circle/config.yml should also be updated.
-    version: 1.17
+    # promu only takes major.minor (golang-builder image tag); the exact
+    # Go version is pinned in go.mod and Dockerfile.
+    version: 1.27
 repository:
     path: github.com/intrinsec/govc_exporter
 build:

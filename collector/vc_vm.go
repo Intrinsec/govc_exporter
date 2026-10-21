@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !noesx
+//go:build !noesx
 
 package collector
 
@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"log/slog"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/view"
@@ -67,7 +67,7 @@ func init() {
 }
 
 // NewVirtualMachineCollector returns a new Collector exposing IpTables stats.
-func NewVirtualMachineCollector(logger log.Logger) (Collector, error) {
+func NewVirtualMachineCollector(logger *slog.Logger) (Collector, error) {
 
 	labels := []string{
 		"vc", "dc", "cluster", "esx", "pool",
@@ -202,19 +202,19 @@ func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric) (err error
 
 	err = c.apiConnect()
 	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to connect", "err", err)
+		c.logger.Error("unable to connect", "err", err)
 		return err
 	}
 	defer c.apiDisconnect()
 	items, err := c.apiRetrieve()
 	if err != nil {
-		level.Error(c.logger).Log("msg", "unable retrieve vm", "err", err)
+		c.logger.Error("unable retrieve vm", "err", err)
 		return err
 	}
 
 	vc := *vcURL
 
-	level.Debug(c.logger).Log("msg", "virtual machine retrieved", "num", len(items))
+	c.logger.Debug("virtual machine retrieved", "num", len(items))
 
 	for _, item := range items {
 
@@ -264,7 +264,11 @@ func (c *virtualMachineCollector) Update(ch chan<- prometheus.Metric) (err error
 		mb := int64(1024 * 1024)
 
 		ch <- c.numCPU.mustNewConstMetric(float64(item.Config.Hardware.NumCPU), labelsValues...)
-		ch <- c.numCoresPerSocket.mustNewConstMetric(float64(item.Config.Hardware.NumCoresPerSocket), labelsValues...)
+		var numCoresPerSocket float64
+		if item.Config.Hardware.NumCoresPerSocket != nil {
+			numCoresPerSocket = float64(*item.Config.Hardware.NumCoresPerSocket)
+		}
+		ch <- c.numCoresPerSocket.mustNewConstMetric(numCoresPerSocket, labelsValues...)
 		ch <- c.memoryBytes.mustNewConstMetric(float64(int64(item.Config.Hardware.MemoryMB)*mb), labelsValues...)
 		ch <- c.overallCPUUsage.mustNewConstMetric(float64(item.Summary.QuickStats.OverallCpuUsage), labelsValues...)
 		ch <- c.overallCPUDemand.mustNewConstMetric(float64(item.Summary.QuickStats.OverallCpuDemand), labelsValues...)

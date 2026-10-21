@@ -1,4 +1,0 @@
-tls_config :
-  cert_file : ""
-  key_file : ""
-  client_auth_type: "x"

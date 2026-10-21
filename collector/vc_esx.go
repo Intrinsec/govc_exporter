@@ -11,15 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !noesx
+//go:build !noesx
 
 package collector
 
 import (
 	"strconv"
-	
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+
+	"log/slog"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -45,7 +45,7 @@ func init() {
 }
 
 // NewEsxCollector returns a new Collector exposing IpTables stats.
-func NewEsxCollector(logger log.Logger) (Collector, error) {
+func NewEsxCollector(logger *slog.Logger) (Collector, error) {
 
 	labels := []string{"vc", "dc", "cluster", "name", "version", "status", "power_state", "connection_state", "standby_mode", "maintenance_mode"}
 
@@ -83,19 +83,19 @@ func (c *esxCollector) Update(ch chan<- prometheus.Metric) (err error) {
 
 	err = c.apiConnect()
 	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to connect", "err", err)
+		c.logger.Error("unable to connect", "err", err)
 		return err
 	}
 	defer c.apiDisconnect()
 	hss, err := c.apiRetrieve()
 	if err != nil {
-		level.Error(c.logger).Log("msg", "unable retrieve esx", "err", err)
+		c.logger.Error("unable retrieve esx", "err", err)
 		return err
 	}
 
 	vc := *vcURL
 
-	level.Debug(c.logger).Log("msg", "esx host retrieved", "num", len(hss))
+	c.logger.Debug("esx host retrieved", "num", len(hss))
 
 	for _, hs := range hss {
 
