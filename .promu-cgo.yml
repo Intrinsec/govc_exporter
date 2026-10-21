@@ -1,13 +1,13 @@
 go:
-    # Whenever the Go version is updated here, .circle/config.yml and
-    # .promu.yml should also be updated.
-    version: 1.17
+    # promu only takes major.minor (golang-builder image tag); the exact
+    # Go version is pinned in go.mod and Dockerfile.
+    version: 1.27
     cgo: true
 repository:
     path: github.com/intrinsec/govc_exporter
 build:
     binaries:
-        - name: node_exporter
+        - name: govc_exporter
     flags: -mod=vendor -a -tags 'netgo static_build'
     ldflags: |
         -X github.com/prometheus/common/version.Version={{.Version}}
@@ -22,6 +22,5 @@ tarball:
 crossbuild:
     platforms:
         - darwin/amd64
-        - darwin/386
+        - darwin/arm64
         - netbsd/amd64
-        - netbsd/386

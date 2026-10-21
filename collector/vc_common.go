@@ -18,8 +18,9 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"log/slog"
+
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/view"
@@ -27,7 +28,6 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -74,7 +74,7 @@ func (c *ParentsCache) Flush() {
 	c.mux.Unlock()
 }
 
-func getParents(ctx context.Context, logger log.Logger, client *vim25.Client, me mo.ManagedEntity) Parents {
+func getParents(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.ManagedEntity) Parents {
 	var entity mo.ManagedEntity
 	var cur *types.ManagedObjectReference
 	res := Parents{
@@ -118,7 +118,7 @@ func getParents(ctx context.Context, logger log.Logger, client *vim25.Client, me
 	return res
 }
 
-func getVMPool(ctx context.Context, logger log.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
+func getVMPool(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
 	if me.ResourcePool == nil {
 		return nil
 	}
@@ -132,7 +132,7 @@ func getVMPool(ctx context.Context, logger log.Logger, client *vim25.Client, me 
 	return &entity
 }
 
-func getVMHostSystem(ctx context.Context, logger log.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
+func getVMHostSystem(ctx context.Context, logger *slog.Logger, client *vim25.Client, me mo.VirtualMachine) *mo.ManagedEntity {
 	if me.Summary.Runtime.Host == nil {
 		return nil
 	}
@@ -154,17 +154,17 @@ func b2f(val bool) float64 {
 }
 
 type vcCollector struct {
-	logger log.Logger
+	logger *slog.Logger
 	ctx    context.Context
 	client *govmomi.Client
 }
 
 func (c *vcCollector) apiConnect() error {
 	esxURL := *vcURL
-	level.Debug(c.logger).Log("msg", "connecting to", "url", esxURL)
+	c.logger.Debug("connecting to", "url", esxURL)
 	u, err := soap.ParseURL(esxURL)
 	if err != nil {
-		level.Error(c.logger).Log("msg", "unable to parse url", "url", esxURL, "err", err)
+		c.logger.Error("unable to parse url", "url", esxURL, "err", err)
 		return err
 	}
 	u.User = url.UserPassword(*vcUsername, *vcPassword)
@@ -176,7 +176,7 @@ func (c *vcCollector) apiConnect() error {
 func (c *vcCollector) apiDisconnect() {
 	err := c.client.Logout(c.ctx)
 	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
+		c.logger.Error("logout error", "err", err)
 	}
 	c.ctx.Done()
 }
@@ -184,6 +184,6 @@ func (c *vcCollector) apiDisconnect() {
 func (c *vcCollector) destroyView(v *view.ContainerView) {
 	err := v.Destroy(c.ctx)
 	if err != nil {
-		level.Error(c.logger).Log("msg", "logout error", "err", err)
+		c.logger.Error("logout error", "err", err)
 	}
 }

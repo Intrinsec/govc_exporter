@@ -1,4 +1,4 @@
-# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
 # TYPE go_gc_duration_seconds summary
 go_gc_duration_seconds{quantile="0"} 0
 go_gc_duration_seconds{quantile="0.25"} 0
@@ -7,84 +7,87 @@ go_gc_duration_seconds{quantile="0.75"} 0
 go_gc_duration_seconds{quantile="1"} 0
 go_gc_duration_seconds_sum 0
 go_gc_duration_seconds_count 0
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent.
+# TYPE go_gc_gogc_percent gauge
+go_gc_gogc_percent 0
+# HELP go_gc_gomemlimit_bytes Go runtime memory limit configured by the user, otherwise math.MaxInt64. This value is set by the GOMEMLIMIT environment variable, and the runtime/debug.SetMemoryLimit function. Sourced from /gc/gomemlimit:bytes.
+# TYPE go_gc_gomemlimit_bytes gauge
+go_gc_gomemlimit_bytes 0
 # HELP go_goroutines Number of goroutines that currently exist.
 # TYPE go_goroutines gauge
 go_goroutines 0
 # HELP go_info Information about the Go environment.
 # TYPE go_info gauge
 go_info 0
-# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
 # TYPE go_memstats_alloc_bytes gauge
 go_memstats_alloc_bytes 0
-# HELP go_memstats_alloc_bytes_total Total number of bytes allocated, even if freed.
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated in heap until now, even if released already. Equals to /gc/heap/allocs:bytes.
 # TYPE go_memstats_alloc_bytes_total counter
 go_memstats_alloc_bytes_total 0
-# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table.
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table. Equals to /memory/classes/profiling/buckets:bytes.
 # TYPE go_memstats_buck_hash_sys_bytes gauge
 go_memstats_buck_hash_sys_bytes 0
-# HELP go_memstats_frees_total Total number of frees.
+# HELP go_memstats_frees_total Total number of heap objects frees. Equals to /gc/heap/frees:objects + /gc/heap/tiny/allocs:objects.
 # TYPE go_memstats_frees_total counter
 go_memstats_frees_total 0
-# HELP go_memstats_gc_cpu_fraction The fraction of this program's available CPU time used by the GC since the program started.
-# TYPE go_memstats_gc_cpu_fraction gauge
-go_memstats_gc_cpu_fraction 0
-# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata.
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata. Equals to /memory/classes/metadata/other:bytes.
 # TYPE go_memstats_gc_sys_bytes gauge
 go_memstats_gc_sys_bytes 0
-# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and currently in use, same as go_memstats_alloc_bytes. Equals to /memory/classes/heap/objects:bytes.
 # TYPE go_memstats_heap_alloc_bytes gauge
 go_memstats_heap_alloc_bytes 0
-# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used.
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used. Equals to /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
 # TYPE go_memstats_heap_idle_bytes gauge
 go_memstats_heap_idle_bytes 0
-# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes
 # TYPE go_memstats_heap_inuse_bytes gauge
 go_memstats_heap_inuse_bytes 0
-# HELP go_memstats_heap_objects Number of allocated objects.
+# HELP go_memstats_heap_objects Number of currently allocated objects. Equals to /gc/heap/objects:objects.
 # TYPE go_memstats_heap_objects gauge
 go_memstats_heap_objects 0
-# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS.
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS. Equals to /memory/classes/heap/released:bytes.
 # TYPE go_memstats_heap_released_bytes gauge
 go_memstats_heap_released_bytes 0
-# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system.
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes + /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
 # TYPE go_memstats_heap_sys_bytes gauge
 go_memstats_heap_sys_bytes 0
 # HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
 # TYPE go_memstats_last_gc_time_seconds gauge
 go_memstats_last_gc_time_seconds 0
-# HELP go_memstats_lookups_total Total number of pointer lookups.
-# TYPE go_memstats_lookups_total counter
-go_memstats_lookups_total 0
-# HELP go_memstats_mallocs_total Total number of mallocs.
+# HELP go_memstats_mallocs_total Total number of heap objects allocated, both live and gc-ed. Semantically a counter version for go_memstats_heap_objects gauge. Equals to /gc/heap/allocs:objects + /gc/heap/tiny/allocs:objects.
 # TYPE go_memstats_mallocs_total counter
 go_memstats_mallocs_total 0
-# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures. Equals to /memory/classes/metadata/mcache/inuse:bytes.
 # TYPE go_memstats_mcache_inuse_bytes gauge
 go_memstats_mcache_inuse_bytes 0
-# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system.
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system. Equals to /memory/classes/metadata/mcache/inuse:bytes + /memory/classes/metadata/mcache/free:bytes.
 # TYPE go_memstats_mcache_sys_bytes gauge
 go_memstats_mcache_sys_bytes 0
-# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures. Equals to /memory/classes/metadata/mspan/inuse:bytes.
 # TYPE go_memstats_mspan_inuse_bytes gauge
 go_memstats_mspan_inuse_bytes 0
-# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system.
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system. Equals to /memory/classes/metadata/mspan/inuse:bytes + /memory/classes/metadata/mspan/free:bytes.
 # TYPE go_memstats_mspan_sys_bytes gauge
 go_memstats_mspan_sys_bytes 0
-# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place.
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place. Equals to /gc/heap/goal:bytes.
 # TYPE go_memstats_next_gc_bytes gauge
 go_memstats_next_gc_bytes 0
-# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations.
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations. Equals to /memory/classes/other:bytes.
 # TYPE go_memstats_other_sys_bytes gauge
 go_memstats_other_sys_bytes 0
-# HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.
+# HELP go_memstats_stack_inuse_bytes Number of bytes obtained from system for stack allocator in non-CGO environments. Equals to /memory/classes/heap/stacks:bytes.
 # TYPE go_memstats_stack_inuse_bytes gauge
 go_memstats_stack_inuse_bytes 0
-# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator.
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator. Equals to /memory/classes/heap/stacks:bytes + /memory/classes/os-stacks:bytes.
 # TYPE go_memstats_stack_sys_bytes gauge
 go_memstats_stack_sys_bytes 0
-# HELP go_memstats_sys_bytes Number of bytes obtained from system.
+# HELP go_memstats_sys_bytes Number of bytes obtained from system. Equals to /memory/classes/total:byte.
 # TYPE go_memstats_sys_bytes gauge
 go_memstats_sys_bytes 0
+# HELP go_sched_gomaxprocs_threads The current runtime.GOMAXPROCS setting, or the number of operating system threads that can execute user-level Go code simultaneously. Sourced from /sched/gomaxprocs:threads.
+# TYPE go_sched_gomaxprocs_threads gauge
+go_sched_gomaxprocs_threads 0
 # HELP go_threads Number of OS threads created.
 # TYPE go_threads gauge
 go_threads 0
@@ -99,46 +102,46 @@ govc_ds_capacity_bytes{cluster="NONE",dc="DC0",maintenance_mode="normal",name="L
 govc_ds_free_space_bytes{cluster="NONE",dc="DC0",maintenance_mode="normal",name="LocalDS_0",type="OTHER",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_esx_avail_cpu_mhz esx total cpu in mhz
 # TYPE govc_esx_avail_cpu_mhz counter
-govc_esx_avail_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_cpu_mhz{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_avail_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_cpu_mhz{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_avail_mem_bytes esx total memory in bytes
 # TYPE govc_esx_avail_mem_bytes gauge
-govc_esx_avail_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_avail_mem_bytes{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_avail_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_avail_mem_bytes{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_cpu_cores_total esx number of  cores
 # TYPE govc_esx_cpu_cores_total counter
-govc_esx_cpu_cores_total{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_cpu_cores_total{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_cpu_cores_total{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_cpu_cores_total{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_cpu_cores_total{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_cpu_cores_total{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_cpu_cores_total{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_cpu_cores_total{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_reboot_required esx reboot required
 # TYPE govc_esx_reboot_required counter
-govc_esx_reboot_required{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_reboot_required{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_reboot_required{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_reboot_required{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_reboot_required{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_reboot_required{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_reboot_required{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_reboot_required{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_uptime_seconds esx host uptime
 # TYPE govc_esx_uptime_seconds counter
-govc_esx_uptime_seconds{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_uptime_seconds{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_uptime_seconds{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_uptime_seconds{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_uptime_seconds{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_uptime_seconds{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_uptime_seconds{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_uptime_seconds{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_used_cpu_mhz esx cpu usage in mhz
 # TYPE govc_esx_used_cpu_mhz gauge
-govc_esx_used_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_cpu_mhz{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_cpu_mhz{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_used_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_cpu_mhz{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_cpu_mhz{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_esx_used_mem_bytes esx used memory in bytes
 # TYPE govc_esx_used_mem_bytes gauge
-govc_esx_used_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H1",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_mem_bytes{cluster="DC0_C0",dc="DC0",name="DC0_C0_H2",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
-govc_esx_used_mem_bytes{cluster="NONE",dc="DC0",name="DC0_H0",status="gray",vc="127.0.0.1:SIMPORT",version="6.5.0"} 0
+govc_esx_used_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H1",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_mem_bytes{cluster="DC0_C0",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_C0_H2",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
+govc_esx_used_mem_bytes{cluster="NONE",connection_state="connected",dc="DC0",maintenance_mode="false",name="DC0_H0",power_state="poweredOn",standby_mode="none",status="gray",vc="127.0.0.1:SIMPORT",version="8.0.2"} 0
 # HELP govc_scrape_collector_duration_seconds govc_exporter: Duration of a collector scrape.
 # TYPE govc_scrape_collector_duration_seconds gauge
 govc_scrape_collector_duration_seconds{collector="ds"} 0
@@ -155,149 +158,149 @@ govc_scrape_collector_success{collector="spod"} 0
 govc_scrape_collector_success{collector="vm"} 0
 # HELP govc_vm_ballooned_memory_bytes vm ballooned memory in bytes
 # TYPE govc_vm_ballooned_memory_bytes gauge
-govc_vm_ballooned_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ballooned_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ballooned_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ballooned_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ballooned_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ballooned_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_compressed_memory_bytes vm compressed memory in bytes
 # TYPE govc_vm_compressed_memory_bytes gauge
-govc_vm_compressed_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_compressed_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_compressed_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_compressed_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_compressed_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_compressed_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_consumed_overhead_memory_bytes vm consumed overhead memory bytes
 # TYPE govc_vm_consumed_overhead_memory_bytes gauge
-govc_vm_consumed_overhead_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_consumed_overhead_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_consumed_overhead_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_consumed_overhead_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_consumed_overhead_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_consumed_overhead_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_cores_number_per_socket_total vm number of cores by socket
 # TYPE govc_vm_cores_number_per_socket_total counter
-govc_vm_cores_number_per_socket_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_cores_number_per_socket_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_cores_number_per_socket_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_cores_number_per_socket_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_cores_number_per_socket_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_cores_number_per_socket_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_cpu_number_total vm number of cpu
 # TYPE govc_vm_cpu_number_total counter
-govc_vm_cpu_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_cpu_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_cpu_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_cpu_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_cpu_number_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_cpu_number_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_disk_capacity_bytes vm disk capacity bytes
 # TYPE govc_vm_disk_capacity_bytes gauge
-govc_vm_disk_capacity_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_C0_RP0_VM1/disk1.vmdk"} 0
-govc_vm_disk_capacity_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_C0_RP0_VM0/disk1.vmdk"} 0
+govc_vm_disk_capacity_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_C0_RP0_VM0/disk1.vmdk"} 0
+govc_vm_disk_capacity_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_C0_RP0_VM1/disk1.vmdk"} 0
 govc_vm_disk_capacity_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_H0_VM0/disk1.vmdk"} 0
 govc_vm_disk_capacity_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",thin_provisioned="true",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT",vmdk="[LocalDS_0] DC0_H0_VM1/disk1.vmdk"} 0
 # HELP govc_vm_distributed_cpu_entitlement_mhz vm distributed CPU entitlement in MHz
 # TYPE govc_vm_distributed_cpu_entitlement_mhz gauge
-govc_vm_distributed_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_distributed_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_distributed_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_distributed_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_distributed_cpu_entitlement_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_distributed_cpu_entitlement_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_distributed_memory_entitlement_bytes vm distributed memory entitlement in bytes
 # TYPE govc_vm_distributed_memory_entitlement_bytes gauge
-govc_vm_distributed_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_distributed_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_distributed_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_distributed_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_distributed_memory_entitlement_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_distributed_memory_entitlement_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_ethernet_driver_connected vm ethernet driver connected
 # TYPE govc_vm_ethernet_driver_connected gauge
-govc_vm_ethernet_driver_connected{cluster="DC0_C0",dc="DC0",driver_mac="00:0c:29:33:34:38",driver_model="E1000",driver_status="untried",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ethernet_driver_connected{cluster="DC0_C0",dc="DC0",driver_mac="00:0c:29:33:34:38",driver_model="E1000",driver_status="untried",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ethernet_driver_connected{cluster="NONE",dc="DC0",driver_mac="00:0c:29:36:63:62",driver_model="E1000",driver_status="untried",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ethernet_driver_connected{cluster="NONE",dc="DC0",driver_mac="00:0c:29:36:63:62",driver_model="E1000",driver_status="untried",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ethernet_driver_connected{cluster="DC0_C0",dc="DC0",driver_mac="00:0c:29:32:64:63",driver_model="E1000",driver_status="untried",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ethernet_driver_connected{cluster="DC0_C0",dc="DC0",driver_mac="00:0c:29:35:32:37",driver_model="E1000",driver_status="untried",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ethernet_driver_connected{cluster="NONE",dc="DC0",driver_mac="00:0c:29:39:32:37",driver_model="E1000",driver_status="untried",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ethernet_driver_connected{cluster="NONE",dc="DC0",driver_mac="00:0c:29:63:65:61",driver_model="E1000",driver_status="untried",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_ft_log_bandwidth vm ft log bandwidth
 # TYPE govc_vm_ft_log_bandwidth gauge
-govc_vm_ft_log_bandwidth{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ft_log_bandwidth{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ft_log_bandwidth{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ft_log_bandwidth{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ft_log_bandwidth{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ft_log_bandwidth{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_ft_secondary_latency vm ft secondary latency
 # TYPE govc_vm_ft_secondary_latency gauge
-govc_vm_ft_secondary_latency{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ft_secondary_latency{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ft_secondary_latency{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ft_secondary_latency{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ft_secondary_latency{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ft_secondary_latency{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_guest_memory_usage_bytes vm guest memory usage in bytes
 # TYPE govc_vm_guest_memory_usage_bytes gauge
-govc_vm_guest_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_guest_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_guest_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_guest_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_guest_memory_usage_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_guest_memory_usage_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_host_memory_usage_bytes vm host memory usage in bytes
 # TYPE govc_vm_host_memory_usage_bytes gauge
-govc_vm_host_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_host_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_host_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_host_memory_usage_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_host_memory_usage_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_host_memory_usage_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_memory_bytes vm memory in bytes
 # TYPE govc_vm_memory_bytes gauge
-govc_vm_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_overall_cpu_demand_mhz vm overall CPU demand in MHz
 # TYPE govc_vm_overall_cpu_demand_mhz gauge
-govc_vm_overall_cpu_demand_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_overall_cpu_demand_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_overall_cpu_demand_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_overall_cpu_demand_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_overall_cpu_demand_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_overall_cpu_demand_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_overall_cpu_usage_mhz vm overall CPU usage in MHz
 # TYPE govc_vm_overall_cpu_usage_mhz gauge
-govc_vm_overall_cpu_usage_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_overall_cpu_usage_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_overall_cpu_usage_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_overall_cpu_usage_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_overall_cpu_usage_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_overall_cpu_usage_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_private_memory_bytes vm private memory in bytes
 # TYPE govc_vm_private_memory_bytes gauge
-govc_vm_private_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_private_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_private_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_private_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_private_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_private_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_shared_memory_bytes vm shared memory in bytes
 # TYPE govc_vm_shared_memory_bytes gauge
-govc_vm_shared_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_shared_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_shared_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_shared_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_shared_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_shared_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_snapshot_number_total vm number of snapshot
 # TYPE govc_vm_snapshot_number_total gauge
-govc_vm_snapshot_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_snapshot_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_snapshot_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_snapshot_number_total{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_snapshot_number_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_snapshot_number_total{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_ssd_swapped_memory_bytes vm ssd swapped memory in bytes
 # TYPE govc_vm_ssd_swapped_memory_bytes gauge
-govc_vm_ssd_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_ssd_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ssd_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_ssd_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ssd_swapped_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_ssd_swapped_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_static_cpu_entitlement_mhz vm static CPU entitlement in MHz
 # TYPE govc_vm_static_cpu_entitlement_mhz gauge
-govc_vm_static_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_static_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_static_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_static_cpu_entitlement_mhz{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_static_cpu_entitlement_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_static_cpu_entitlement_mhz{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_static_memory_entitlement_bytes vm static memory entitlement in bytes
 # TYPE govc_vm_static_memory_entitlement_bytes gauge
-govc_vm_static_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_static_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_static_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_static_memory_entitlement_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_static_memory_entitlement_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_static_memory_entitlement_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_swapped_memory_bytes vm swapped memory in bytes
 # TYPE govc_vm_swapped_memory_bytes gauge
-govc_vm_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_swapped_memory_bytes{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_swapped_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_swapped_memory_bytes{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 # HELP govc_vm_uptime_seconds vm uptime in seconds
 # TYPE govc_vm_uptime_seconds counter
-govc_vm_uptime_seconds{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-govc_vm_uptime_seconds{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_uptime_seconds{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H0",guestfullname="",hostname="",name="DC0_C0_RP0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
+govc_vm_uptime_seconds{cluster="DC0_C0",dc="DC0",esx="DC0_C0_H1",guestfullname="",hostname="",name="DC0_C0_RP0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_uptime_seconds{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM0",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
 govc_vm_uptime_seconds{cluster="NONE",dc="DC0",esx="DC0_H0",guestfullname="",hostname="",name="DC0_H0_VM1",overall_status="green",pool="Resources",power_state="poweredOn",tools_status="toolsNotInstalled",tools_version="0",vc="127.0.0.1:SIMPORT"} 0
-# HELP node_exporter_build_info A metric with a constant '1' value labeled by version, revision, branch, and goversion from which node_exporter was built.
+# HELP node_exporter_build_info A metric with a constant '1' value labeled by version, revision, branch, goversion from which node_exporter was built, and the goos and goarch for the build.
 # TYPE node_exporter_build_info gauge
 govc_exporter_build_info 0
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
@@ -306,6 +309,12 @@ process_cpu_seconds_total 0
 # HELP process_max_fds Maximum number of open file descriptors.
 # TYPE process_max_fds gauge
 process_max_fds 0
+# HELP process_network_receive_bytes_total Number of bytes received by the process over the network.
+# TYPE process_network_receive_bytes_total counter
+process_network_receive_bytes_total 0
+# HELP process_network_transmit_bytes_total Number of bytes sent by the process over the network.
+# TYPE process_network_transmit_bytes_total counter
+process_network_transmit_bytes_total 0
 # HELP process_open_fds Number of open file descriptors.
 # TYPE process_open_fds gauge
 process_open_fds 0

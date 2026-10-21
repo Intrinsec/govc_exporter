@@ -6,10 +6,9 @@ orbs:
 
 jobs:
   test:
-    # Whenever the Go version is updated here, .travis.yml and .promu.yml
-    # should also be updated.
+    # Keep in sync with the Go version pinned in go.mod and Dockerfile.
     docker:
-    - image: circleci/golang:1.17
+    - image: cimg/go:1.27.3
 
     steps:
     - prometheus/setup_environment
