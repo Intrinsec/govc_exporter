@@ -19,12 +19,11 @@ import (
 	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
 type resourcePoolCollector struct {
-	vcCollector
+	logger                       *slog.Logger
 	overallCPUUsage              typedDesc
 	overallCPUDemand             typedDesc
 	guestMemoryUsage             typedDesc
@@ -105,19 +104,16 @@ func NewResourcePoolCollector(logger *slog.Logger) (Collector, error) {
 	return &res, nil
 }
 
-func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) {
-
-	cache.Flush()
-
-	err = c.apiConnect()
-	if err != nil {
-		c.logger.Error("unable to connect", "err", err)
-		return err
-	}
-	defer c.apiDisconnect()
-	items, err := c.apiRetrieve()
+func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric, s *scrape) error {
+	items, err := c.apiRetrieve(s)
 	if err != nil {
 		c.logger.Error("unable retrieve esx", "err", err)
+		return err
+	}
+
+	inv, err := s.inventory()
+	if err != nil {
+		c.logger.Error("unable to retrieve inventory", "err", err)
 		return err
 	}
 
@@ -131,7 +127,7 @@ func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) 
 			continue
 		}
 		name := item.Summary.GetResourcePoolSummary().Name
-		tmp := getParents(c.ctx, c.logger, c.client.Client, item.ManagedEntity)
+		tmp := inv.parents(item.Parent)
 
 		labels := []string{vc, tmp.dc, name}
 		mb := int64(1024 * 1024)
@@ -158,29 +154,11 @@ func (c *resourcePoolCollector) Update(ch chan<- prometheus.Metric) (err error) 
 	return nil
 }
 
-func (c *resourcePoolCollector) apiRetrieve() ([]mo.ResourcePool, error) {
+func (c *resourcePoolCollector) apiRetrieve(s *scrape) ([]mo.ResourcePool, error) {
 	var items []mo.ResourcePool
-
-	m := view.NewManager(c.client.Client)
-	v, err := m.CreateContainerView(
-		c.ctx,
-		c.client.ServiceContent.RootFolder,
-		[]string{"ResourcePool"},
-		true,
-	)
-	if err != nil {
-		return items, err
-	}
-	defer c.destroyView(v)
-
-	err = v.Retrieve(
-		c.ctx,
-		[]string{"ResourcePool"},
-		[]string{
-			"parent",
-			"summary",
-		},
-		&items,
-	)
+	err := s.retrieveAll("ResourcePool", []string{
+		"parent",
+		"summary",
+	}, &items)
 	return items, err
 }
